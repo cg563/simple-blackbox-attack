@@ -12,9 +12,9 @@ import os
 import pdb
 
 parser = argparse.ArgumentParser(description='Runs SimBA on a set of images')
+parser.add_argument('--data_root', type=str, required=True, help='root directory of imagenet data')
 parser.add_argument('--result_dir', type=str, default='save', help='directory for saving results')
 parser.add_argument('--sampled_image_dir', type=str, default='save', help='directory to cache sampled images')
-parser.add_argument('--data_root', type=str, default='/scratch/datasets/imagenet', help='root directory of imagenet data')
 parser.add_argument('--model', type=str, default='resnet50', help='type of base model to use')
 parser.add_argument('--num_runs', type=int, default=1000, help='number of image samples')
 parser.add_argument('--batch_size', type=int, default=50, help='batch size for parallel runs')
@@ -49,6 +49,8 @@ def get_preds(model, x):
     _, preds = output.data.max(1)
     return preds
 
+# runs simba on a batch of images <images_batch> with true labels (for untargeted attack) or target labels
+# (for targeted attack) <labels_batch>
 def dct_attack_batch(model, images_batch, labels_batch, max_iters, freq_dims, stride, epsilon, order='rand', targeted=False, pixel_attack=False, log_every=1):
     batch_size = images_batch.size(0)
     image_size = images_batch.size(2)
@@ -149,6 +151,11 @@ def dct_attack_batch(model, images_batch, labels_batch, max_iters, freq_dims, st
         remaining = preds.eq(labels_batch)
     succs[:, max_iters-1] = 1 - remaining
     return x, probs, succs, queries, l2_norms, linf_norms
+
+if not os.path.exists(args.result_dir):
+    os.mkdir(args.result_dir)
+if not os.path.exists(args.sampled_image_dir):
+    os.mkdir(args.sampled_image_dir)
 
 # load model and dataset
 model = getattr(models, args.model)(pretrained=True).cuda()
