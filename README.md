@@ -6,7 +6,7 @@ Our code uses PyTorch (pytorch >= 0.4.1, torchvision >= 0.2.1) with CUDA 9.0 and
 
 To run SimBA (pixel attack):
 ```
-python run_simba.py --data_root <imagenet_root> --num_iters 10000 --pixel_attack
+python run_simba.py --data_root <imagenet_root> --num_iters 10000 --pixel_attack  --freq_dims 224
 ```
 To run SimBA-DCT (low frequency attack):
 ```
