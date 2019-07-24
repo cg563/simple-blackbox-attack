@@ -192,7 +192,7 @@ else:
 if args.order == 'rand':
     n_dims = 3 * args.freq_dims * args.freq_dims
 else:
-    n_dims = image_size * image_size
+    n_dims = 3 * image_size * image_size
 if args.num_iters > 0:
     max_iters = int(min(n_dims, args.num_iters))
 else:
