@@ -211,7 +211,7 @@ def block_dct(x, block_size=8, masked=False, ratio=0.5):
 
 
 # applies IDCT to each block of size block_size
-def block_idct(x, block_size=8, masked=False, ratio=0.5):
+def block_idct(x, block_size=8, masked=False, ratio=0.5, linf_bound=0.0):
     z = torch.zeros(x.size())
     num_blocks = int(x.size(2) / block_size)
     mask = np.zeros((x.size(0), x.size(1), block_size, block_size))
@@ -226,4 +226,7 @@ def block_idct(x, block_size=8, masked=False, ratio=0.5):
             if masked:
                 submat = submat * mask
             z[:, :, (i * block_size):((i + 1) * block_size), (j * block_size):((j + 1) * block_size)] = torch.from_numpy(idct(idct(submat, axis=3, norm='ortho'), axis=2, norm='ortho'))
-    return z
+    if linf_bound > 0:
+        return z.clamp(-linf_bound, linf_bound)
+    else:
+        return z

@@ -21,6 +21,7 @@ parser.add_argument('--batch_size', type=int, default=50, help='batch size for p
 parser.add_argument('--num_iters', type=int, default=0, help='maximum number of iterations, 0 for unlimited')
 parser.add_argument('--log_every', type=int, default=10, help='log every n iterations')
 parser.add_argument('--epsilon', type=float, default=0.2, help='step size per iteration')
+parser.add_argument('--linf_bound', type=float, default=0.0, help='L_inf bound for frequency space attack')
 parser.add_argument('--freq_dims', type=int, default=14, help='dimensionality of 2D frequency space')
 parser.add_argument('--order', type=str, default='rand', help='(random) order of coordinate selection')
 parser.add_argument('--stride', type=int, default=7, help='stride for block order')
@@ -80,7 +81,7 @@ def dct_attack_batch(model, images_batch, labels_batch, max_iters, freq_dims, st
     if pixel_attack:
         trans = lambda z: z
     else:
-        trans = lambda z: utils.block_idct(z, block_size=image_size)
+        trans = lambda z: utils.block_idct(z, block_size=image_size, linf_bound=args.linf_bound)
     remaining_indices = torch.arange(0, batch_size).long()
     for k in range(max_iters):
         dim = indices[k]
@@ -104,7 +105,7 @@ def dct_attack_batch(model, images_batch, labels_batch, max_iters, freq_dims, st
             break
         remaining_indices = torch.arange(0, batch_size)[remaining].long()
         if k > 0:
-            succs[:, k-1] = 1 - remaining
+            succs[:, k-1] = ~remaining
         diff = torch.zeros(remaining.sum(), n_dims)
         diff[:, dim] = epsilon
         left_vec = x[remaining_indices] - diff
@@ -121,7 +122,7 @@ def dct_attack_batch(model, images_batch, labels_batch, max_iters, freq_dims, st
             improved = left_probs.lt(prev_probs[remaining_indices])
         # only increase query count further by 1 for images that did not improve in adversarial loss
         if improved.sum() < remaining_indices.size(0):
-            queries_k[remaining_indices[1-improved]] += 1
+            queries_k[remaining_indices[~improved]] += 1
         # try positive directions
         adv = (images_batch[remaining_indices] + trans(expand_vector(right_vec, expand_dims))).clamp(0, 1)
         right_probs = get_probs(model, adv, labels_batch[remaining_indices])
@@ -153,7 +154,7 @@ def dct_attack_batch(model, images_batch, labels_batch, max_iters, freq_dims, st
         remaining = preds.ne(labels_batch)
     else:
         remaining = preds.eq(labels_batch)
-    succs[:, max_iters-1] = 1 - remaining
+    succs[:, max_iters-1] = ~remaining
     return x, probs, succs, queries, l2_norms, linf_norms
 
 if not os.path.exists(args.result_dir):
@@ -166,10 +167,10 @@ model = getattr(models, args.model)(pretrained=True).cuda()
 model.eval()
 if args.model.startswith('inception'):
     image_size = 299
-    #testset = dset.ImageFolder(args.data_root + '/val', utils.INCEPTION_TRANSFORM)
+    testset = dset.ImageFolder(args.data_root + '/val', utils.INCEPTION_TRANSFORM)
 else:
     image_size = 224
-    #testset = dset.ImageFolder(args.data_root + '/val', utils.IMAGENET_TRANSFORM)
+    testset = dset.ImageFolder(args.data_root + '/val', utils.IMAGENET_TRANSFORM)
 
 # load sampled images or sample new ones
 # this is to ensure all attacks are run on the same set of correctly classified images
@@ -232,6 +233,6 @@ for i in range(N):
     if args.targeted:
         prefix += '_targeted'
     savefile = '%s/%s_%s_%d_%d_%d_%.4f_%s%s.pth' % (
-        args.result_dir, prefix, args.model, args.num_runs, args.num_iters, freq_dims, args.epsilon, args.order, args.save_suffix)
+        args.result_dir, prefix, args.model, args.num_runs, args.num_iters, args.freq_dims, args.epsilon, args.order, args.save_suffix)
     torch.save({'original': images, 'vecs': all_vecs, 'probs': all_probs, 'succs': all_succs, 'queries': all_queries,
                 'l2_norms': all_l2_norms, 'linf_norms': all_linf_norms}, savefile)
