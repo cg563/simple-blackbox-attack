@@ -155,7 +155,7 @@ def dct_attack_batch(model, images_batch, labels_batch, max_iters, freq_dims, st
     else:
         remaining = preds.eq(labels_batch)
     succs[:, max_iters-1] = ~remaining
-    return x, probs, succs, queries, l2_norms, linf_norms
+    return expanded, probs, succs, queries, l2_norms, linf_norms
 
 if not os.path.exists(args.result_dir):
     os.mkdir(args.result_dir)
@@ -209,18 +209,18 @@ for i in range(N):
         while labels_targeted.eq(labels_batch).sum() > 0:
             labels_targeted = torch.floor(1000 * torch.rand(labels_batch.size())).long()
         labels_batch = labels_targeted
-    x, probs, succs, queries, l2_norms, linf_norms = dct_attack_batch(
+    adv, probs, succs, queries, l2_norms, linf_norms = dct_attack_batch(
         model, images_batch, labels_batch, max_iters, args.freq_dims, args.stride, args.epsilon, order=args.order,
         targeted=args.targeted, pixel_attack=args.pixel_attack, log_every=args.log_every)
     if i == 0:
-        all_vecs = x
+        all_adv = adv
         all_probs = probs
         all_succs = succs
         all_queries = queries
         all_l2_norms = l2_norms
         all_linf_norms = linf_norms
     else:
-        all_vecs = torch.cat([all_vecs, x], dim=0)
+        all_adv = torch.cat([all_adv, adv], dim=0)
         all_probs = torch.cat([all_probs, probs], dim=0)
         all_succs = torch.cat([all_succs, succs], dim=0)
         all_queries = torch.cat([all_queries, queries], dim=0)
@@ -234,5 +234,5 @@ for i in range(N):
         prefix += '_targeted'
     savefile = '%s/%s_%s_%d_%d_%d_%.4f_%s%s.pth' % (
         args.result_dir, prefix, args.model, args.num_runs, args.num_iters, args.freq_dims, args.epsilon, args.order, args.save_suffix)
-    torch.save({'original': images, 'vecs': all_vecs, 'probs': all_probs, 'succs': all_succs, 'queries': all_queries,
+    torch.save({'adv': all_adv, 'probs': all_probs, 'succs': all_succs, 'queries': all_queries,
                 'l2_norms': all_l2_norms, 'linf_norms': all_linf_norms}, savefile)
