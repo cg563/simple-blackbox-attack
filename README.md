@@ -18,6 +18,7 @@ For targeted attack, add flag ```--targeted``` and change ```--num_iters``` to 3
 For the Inception-v3 model, we used ```--freq_dims 38``` and ```--stride 9``` due to the larger input size.
 
 **Update 2020/01/09**: Due to changes in the underlying Google Cloud Vision models, our attack no longer works against them.
+
 **Update 2020/06/22**: Added L_inf bounded SimBA-DCT attack. To run with L_inf bound 0.05:
 ```
 python run_simba.py --data_root <imagenet_root> --num_iters 10000 --freq_dims 224 --order rand --linf_bound 0.05
