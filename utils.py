@@ -9,13 +9,13 @@ IMAGENET_SIZE = 224
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
 IMAGENET_TRANSFORM = trans.Compose([
-    trans.Scale(256),
+    trans.Resize(256),
     trans.CenterCrop(224),
     trans.ToTensor()])
 
 INCEPTION_SIZE = 299
 INCEPTION_TRANSFORM = trans.Compose([
-    trans.Scale(342),
+    trans.Resize(342),
     trans.CenterCrop(299),
     trans.ToTensor()])
 

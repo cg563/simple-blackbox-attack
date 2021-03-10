@@ -23,3 +23,8 @@ For the Inception-v3 model, we used ```--freq_dims 38``` and ```--stride 9``` du
 ```
 python run_simba.py --data_root <imagenet_root> --num_iters 10000 --freq_dims 224 --order rand --linf_bound 0.05
 ```
+
+**Update 2021/03/10**: Added code for running SimBA on CIFAR-10 using models from [pytorch-cifar](https://github.com/kuangliu/pytorch-cifar). To run targeted attack against a trained ResNet-18 model:
+```
+python run_simba_cifar.py --data_root <cifar_root> --model_ckpt <model_checkpoint> --model ResNet18 --targeted
+```
