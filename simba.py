@@ -110,7 +110,7 @@ class SimBA:
                 break
             remaining_indices = torch.arange(0, batch_size)[remaining].long()
             if k > 0:
-                succs[:, k-1] = ~remaining
+                succs[:, k] = ~remaining
             diff = torch.zeros(remaining.sum(), n_dims)
             diff[:, dim] = epsilon
             left_vec = x[remaining_indices] - diff
